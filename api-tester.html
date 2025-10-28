@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Gateway Endpoint Tester</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        
+        .card {
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: #e9ecef;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+        }
+        
+        .form-control, .form-select {
+            border: 1px solid #ced4da;
+        }
+        
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+        
+        .response-area {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            white-space: pre-wrap;
+        }
+        
+        .status-indicator {
+            font-size: 1.2em;
+            margin-left: 10px;
+        }
+        
+        .method-badge {
+            font-size: 0.8em;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+        
+        .method-get {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .method-post {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .parameter-input {
+            margin-bottom: 10px;
+        }
+        
+        .url-display {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 0.375rem;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        
+        .url-container {
+            position: relative;
+        }
+        
+        .copy-button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+        
+        .copy-button:hover {
+            opacity: 1;
+            background: #5a6268;
+        }
+        
+        .copy-button.copied {
+            background: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">API Gateway Endpoint Tester</h1>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Configuração -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Configuração do Endpoint</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Zona -->
+                        <div class="mb-3">
+                            <label for="zone" class="form-label">Zona:</label>
+                            <select class="form-select" id="zone">
+                                <option value="retailgeneral3p">Zona 3 (retailgeneral3p)</option>
+                                <option value="retailgeneral2p">Zona 2 (retailgeneral2p)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Ambiente -->
+                        <div class="mb-3">
+                            <label for="environment" class="form-label">Ambiente:</label>
+                            <select class="form-select" id="environment">
+                                <option value="prod">Produção</option>
+                                <option value="test">Teste</option>
+                                <option value="dev">Desenvolvimento</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Lambda -->
+                        <div class="mb-3">
+                            <label for="lambda" class="form-label">Lambda Function:</label>
+                            <select class="form-select" id="lambda">
+                                <option value="">Selecione uma lambda...</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Parâmetros dinâmicos -->
+                        <div id="parameters-container" class="mb-3" style="display: none;">
+                            <label class="form-label">Parâmetros:</label>
+                            <div id="parameters-list"></div>
+                        </div>
+                        
+                        <!-- Body para POST -->
+                        <div id="body-container" class="mb-3" style="display: none;">
+                            <label for="request-body" class="form-label">Request Body (JSON):</label>
+                            <textarea class="form-control" id="request-body" rows="6" placeholder='{"key": "value"}'></textarea>
+                        </div>
+                        
+                        <!-- URL Completa -->
+                        <div class="mb-3">
+                            <label class="form-label">URL Completa:</label>
+                            <div class="url-container">
+                                <div id="full-url" class="url-display">Selecione uma lambda para ver a URL</div>
+                                <button type="button" class="copy-button" id="copy-url-btn" onclick="copyURL()" title="Copiar URL">
+                                    📋 Copiar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Botão de teste -->
+                        <button class="btn btn-primary w-100" id="test-button" onclick="testEndpoint()">
+                            <span id="method-display" class="method-badge me-2">GET</span>
+                            Testar Endpoint
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resposta -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Resposta</h5>
+                        <div>
+                            <span id="status-code"></span>
+                            <span id="status-indicator"></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="response-content" class="response-area">
+                            Clique em "Testar Endpoint" para ver a resposta aqui...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuração das lambdas
+        // Main
+        const lambdaConfig = [
+            {
+                name: "coveo-values",
+                method: "GET",
+                path: "/coveo-values",
+                parameters: [
+                    { name: "query", defaultValue: "a", required: true },
+                    { name: "user", defaultValue: "sxp", required: true }
+                ]
+            },
+            {
+                name: "coveo-querySuggest",
+                method: "GET",
+                path: "/coveo-querySuggest",
+                parameters: [
+                    { name: "query", defaultValue: "a", required: true },
+                    { name: "user", defaultValue: "sxp", required: true }
+                ]
+            },
+            
+        ];
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            populateLambdas();
+            updateURL();
+            
+            // Event listeners
+            document.getElementById('zone').addEventListener('change', updateURL);
+            document.getElementById('environment').addEventListener('change', updateURL);
+            document.getElementById('lambda').addEventListener('change', onLambdaChange);
+        });
+
+        function populateLambdas() {
+            const lambdaSelect = document.getElementById('lambda');
+            lambdaConfig.forEach(lambda => {
+                const option = document.createElement('option');
+                option.value = lambda.name;
+                option.textContent = `${lambda.name} (${lambda.method})`;
+                lambdaSelect.appendChild(option);
+            });
+        }
+
+        function onLambdaChange() {
+            const selectedLambda = getSelectedLambda();
+            updateURL();
+            updateMethodDisplay();
+            updateParameters();
+            updateBodySection();
+        }
+
+        function getSelectedLambda() {
+            const lambdaName = document.getElementById('lambda').value;
+            return lambdaConfig.find(l => l.name === lambdaName);
+        }
+
+        function updateMethodDisplay() {
+            const selectedLambda = getSelectedLambda();
+            const methodDisplay = document.getElementById('method-display');
+            
+            if (selectedLambda) {
+                methodDisplay.textContent = selectedLambda.method;
+                methodDisplay.className = `method-badge me-2 method-${selectedLambda.method.toLowerCase()}`;
+            } else {
+                methodDisplay.textContent = 'GET';
+                methodDisplay.className = 'method-badge me-2 method-get';
+            }
+        }
+
+        function updateParameters() {
+            const selectedLambda = getSelectedLambda();
+            const container = document.getElementById('parameters-container');
+            const paramsList = document.getElementById('parameters-list');
+            
+            paramsList.innerHTML = '';
+            
+            if (selectedLambda && selectedLambda.parameters.length > 0) {
+                container.style.display = 'block';
+                
+                selectedLambda.parameters.forEach(param => {
+                    const div = document.createElement('div');
+                    div.className = 'parameter-input';
+                    
+                    const label = document.createElement('label');
+                    label.className = 'form-label';
+                    label.textContent = `${param.name}${param.required ? ' *' : ''}:`;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'form-control';
+                    input.id = `param-${param.name}`;
+                    input.value = param.defaultValue || '';
+                    input.placeholder = param.defaultValue || '';
+                    input.addEventListener('input', updateURL);
+                    
+                    div.appendChild(label);
+                    div.appendChild(input);
+                    paramsList.appendChild(div);
+                });
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        function updateBodySection() {
+            const selectedLambda = getSelectedLambda();
+            const bodyContainer = document.getElementById('body-container');
+            const bodyTextarea = document.getElementById('request-body');
+            
+            if (selectedLambda && selectedLambda.method === 'POST') {
+                bodyContainer.style.display = 'block';
+                if (selectedLambda.defaultBody) {
+                    bodyTextarea.value = JSON.stringify(selectedLambda.defaultBody, null, 2);
+                }
+            } else {
+                bodyContainer.style.display = 'none';
+                bodyTextarea.value = '';
+            }
+        }
+
+        function updateURL() {
+            const zone = document.getElementById('zone').value;
+            const environment = document.getElementById('environment').value;
+            const selectedLambda = getSelectedLambda();
+            const urlDisplay = document.getElementById('full-url');
+            
+            if (!selectedLambda) {
+                urlDisplay.textContent = 'Selecione uma lambda para ver a URL';
+                return;
+            }
+            
+            let path = selectedLambda.path;
+            
+            // Substituir parâmetros no path
+            if (selectedLambda.parameters) {
+                selectedLambda.parameters.forEach(param => {
+                    const paramValue = document.getElementById(`param-${param.name}`)?.value || param.defaultValue || '';
+                    if (path.includes(`{${param.name}}`)) {
+                        path = path.replace(`{${param.name}}`, paramValue);
+                    }
+                });
+            }
+            
+            // Adicionar query parameters para GET
+            if (selectedLambda.method === 'GET' && selectedLambda.parameters) {
+                const queryParams = [];
+                selectedLambda.parameters.forEach(param => {
+                    if (!path.includes(`{${param.name}}`)) {
+                        const paramValue = document.getElementById(`param-${param.name}`)?.value || param.defaultValue;
+                        if (paramValue) {
+                            queryParams.push(`${param.name}=${encodeURIComponent(paramValue)}`);
+                        }
+                    }
+                });
+                
+                if (queryParams.length > 0) {
+                    path += '?' + queryParams.join('&');
+                }
+            }
+            
+            // Construir URL base da Vanguard
+            const baseUrl = `https://search-ext-apigtwy-service.${zone}.c1.vanguard.com/search`;
+            const fullUrl = baseUrl + path;
+            
+            urlDisplay.textContent = fullUrl;
+        }
+
+        async function testEndpoint() {
+            const selectedLambda = getSelectedLambda();
+            if (!selectedLambda) {
+                alert('Selecione uma lambda para testar');
+                return;
+            }
+            
+            const fullUrl = document.getElementById('full-url').textContent;
+            const responseContent = document.getElementById('response-content');
+            const statusCode = document.getElementById('status-code');
+            const statusIndicator = document.getElementById('status-indicator');
+            
+            // Mostrar loading
+            responseContent.textContent = 'Fazendo requisição...';
+            statusCode.textContent = '';
+            statusIndicator.textContent = '';
+            
+            try {
+                const options = {
+                    method: selectedLambda.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (selectedLambda.method === 'POST') {
+                    const bodyText = document.getElementById('request-body').value.trim();
+                    if (bodyText) {
+                        try {
+                            const bodyJson = JSON.parse(bodyText);
+                            options.body = JSON.stringify(bodyJson);
+                        } catch (e) {
+                            throw new Error('JSON inválido no body da requisição');
+                        }
+                    }
+                }
+                
+                const response = await fetch(fullUrl, options);
+                
+                // Atualizar status
+                statusCode.textContent = `${response.status} ${response.statusText}`;
+                statusIndicator.textContent = response.ok ? '✅' : '❌';
+                
+                // Processar resposta
+                const contentType = response.headers.get('content-type');
+                let responseText;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const responseJson = await response.json();
+                    responseText = JSON.stringify(responseJson, null, 2);
+                } else {
+                    responseText = await response.text();
+                }
+                
+                responseContent.textContent = responseText;
+                
+            } catch (error) {
+                statusCode.textContent = 'Erro';
+                statusIndicator.textContent = '❌';
+                responseContent.textContent = `Erro na requisição:\n${error.message}`;
+            }
+        }
+
+        async function copyURL() {
+            const urlElement = document.getElementById('full-url');
+            const copyButton = document.getElementById('copy-url-btn');
+            const urlText = urlElement.textContent;
+            
+            if (urlText === 'Selecione uma lambda para ver a URL') {
+                alert('Nenhuma URL para copiar. Selecione uma lambda primeiro.');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(urlText);
+                
+                // Feedback visual
+                copyButton.textContent = '✅ Copiado!';
+                copyButton.classList.add('copied');
+                
+                // Voltar ao normal após 2 segundos
+                setTimeout(() => {
+                    copyButton.textContent = '📋 Copiar';
+                    copyButton.classList.remove('copied');
+                }, 2000);
+                
+            } catch (err) {
+                // Fallback para browsers mais antigos
+                const textArea = document.createElement('textarea');
+                textArea.value = urlText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Feedback visual
+                copyButton.textContent = '✅ Copiado!';
+                copyButton.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyButton.textContent = '📋 Copiar';
+                    copyButton.classList.remove('copied');
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>
