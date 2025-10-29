@@ -236,7 +236,30 @@
                     { name: "user", defaultValue: "sxp", required: true }
                 ]
             },
-            
+            {
+                name: "search-custom",
+                method: "GET",
+                path: "/custom-endpoint",
+                parameters: [
+                    { name: "query", defaultValue: "", required: false },
+                    { name: "user", defaultValue: "sxp", required: false },
+                    { name: "limit", defaultValue: "10", required: false }
+                ]
+            },
+            {
+                name: "search-post",
+                method: "POST",
+                path: "/search-data",
+                parameters: [],
+                defaultBody: {
+                    "query": "exemplo",
+                    "user": "sxp",
+                    "filters": {
+                        "category": "produtos",
+                        "limit": 20
+                    }
+                }
+            }
         ];
 
         // Inicialização
